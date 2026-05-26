@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grupo HTTP — Sistemas Operativos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:        #050a14;
+      --bg2:       #0b1526;
+      --bg3:       #0f1e35;
+      --accent:    #00d4ff;
+      --accent2:   #7b5ea7;
+      --accent3:   #ff5e7a;
+      --text:      #e8f4ff;
+      --muted:     #6a8aad;
+      --card1:     #00d4ff;
+      --card2:     #7b5ea7;
+      --card3:     #ff5e7a;
+      --card4:     #00e5a0;
+      --glow:      0 0 30px rgba(0,212,255,0.4);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      overflow-x: hidden;
+    }
+
+    /* ──────────────── GRID NOISE BACKGROUND ──────────────── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ──────────────── NAV ──────────────── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 2.5rem;
+      background: rgba(5,10,20,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(0,212,255,0.12);
+    }
+
+    .nav-logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.1rem;
+      letter-spacing: 0.05em;
+      color: var(--accent);
+      text-transform: uppercase;
+    }
+
+    /* ──────────────── CLOCK ──────────────── */
+    #clock {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--accent);
+      background: rgba(0,212,255,0.07);
+      border: 1px solid rgba(0,212,255,0.25);
+      border-radius: 6px;
+      padding: 0.4rem 0.9rem;
+      letter-spacing: 0.06em;
+      text-align: right;
+      min-width: 220px;
+    }
+
+    #clock .date-line { color: var(--muted); font-size: 0.7rem; margin-bottom: 2px; }
+
+    /* ──────────────── HERO ──────────────── */
+    #hero {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 7rem 2rem 4rem;
+      text-align: center;
+    }
+
+    .hero-eyebrow {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.75rem;
+      letter-spacing: 0.3em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 1.2rem;
+    }
+
+    .hero-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: clamp(2.8rem, 7vw, 6rem);
+      line-height: 1.05;
+      background: linear-gradient(135deg, #fff 0%, var(--accent) 50%, var(--accent2) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 1rem;
+    }
+
+    /* IMAGE CARD */
+    .img-wrapper {
+      position: relative;
+      display: inline-block;
+      margin-top: 3rem;
+      cursor: pointer;
+      border-radius: 16px;
+    }
+
+    .img-wrapper::before {
+      content: '';
+      position: absolute;
+      inset: -3px;
+      border-radius: 19px;
+      background: conic-gradient(
+        from 0deg,
+        var(--accent), var(--accent2), var(--accent3), var(--accent), var(--accent2)
+      );
+      background-size: 200%;
+      animation: borderSpin 4s linear infinite;
+      z-index: -1;
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+
+    .img-wrapper:hover::before { opacity: 1; }
+
+    @keyframes borderSpin {
+      0%   { filter: hue-rotate(0deg); }
+      100% { filter: hue-rotate(360deg); }
+    }
+
+    .img-wrapper img {
+      display: block;
+      max-width: min(680px, 90vw);
+      height: auto;
+      border-radius: 14px;
+      border: 2px solid rgba(0,212,255,0.2);
+      transition: transform 0.5s cubic-bezier(0.22,1,0.36,1), box-shadow 0.5s;
+      filter: brightness(0.88);
+    }
+
+    .img-wrapper:hover img {
+      transform: scale(1.04);
+      box-shadow: 0 0 60px rgba(0,212,255,0.35), 0 30px 60px rgba(0,0,0,0.5);
+      filter: brightness(0.6);
+    }
+
+    .img-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 14px;
+      opacity: 0;
+      transition: opacity 0.4s;
+      pointer-events: none;
+    }
+
+    .img-wrapper:hover .img-overlay { opacity: 1; }
+
+    .img-overlay-text {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(1.6rem, 4vw, 3rem);
+      font-weight: 800;
+      color: #fff;
+      text-shadow: 0 0 20px rgba(0,212,255,0.9), 0 0 60px rgba(0,212,255,0.6);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      text-align: center;
+      padding: 0 1.5rem;
+    }
+
+    .hero-subtitle {
+      margin-top: 2.5rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+    }
+
+    /* ──────────────── SECTION WRAPPER ──────────────── */
+    section {
+      position: relative;
+      z-index: 1;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 5rem 2rem;
+    }
+
+    .section-label {
+      font-size: 0.7rem;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.6rem;
+    }
+
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      margin-bottom: 3rem;
+      color: #fff;
+    }
+
+    /* ──────────────── DIVIDER ──────────────── */
+    .divider {
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(0,212,255,0.3), transparent);
+      margin: 0 auto;
+    }
+
+    /* ──────────────── CARDS ──────────────── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .card {
+      background: var(--bg2);
+      border-radius: 14px;
+      padding: 2rem 1.5rem;
+      border: 1px solid rgba(255,255,255,0.06);
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.35s cubic-bezier(0.22,1,0.36,1), box-shadow 0.35s;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--card-color);
+      box-shadow: 0 0 16px var(--card-color);
+    }
+
+    .card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 50px rgba(0,0,0,0.4), 0 0 30px color-mix(in srgb, var(--card-color) 20%, transparent);
+    }
+
+    .card-icon {
+      font-size: 2.2rem;
+      margin-bottom: 1rem;
+    }
+
+    .card-name {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: #fff;
+      margin-bottom: 0.4rem;
+    }
+
+    .card-role {
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--card-color);
+    }
+
+    .card-num {
+      position: absolute;
+      bottom: 1.2rem; right: 1.4rem;
+      font-family: 'Syne', sans-serif;
+      font-size: 3.5rem;
+      font-weight: 800;
+      color: rgba(255,255,255,0.04);
+      line-height: 1;
+      pointer-events: none;
+    }
+
+    /* ──────────────── HTTP SECTION ──────────────── */
+    .http-box {
+      background: var(--bg2);
+      border: 1px solid rgba(0,212,255,0.15);
+      border-radius: 16px;
+      padding: 2.5rem;
+      display: flex;
+      gap: 2rem;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .http-icon-col {
+      font-size: 3.5rem;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+
+    .http-text h3 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 0.8rem;
+    }
+
+    .http-text p {
+      color: #a0bcda;
+      line-height: 1.8;
+      font-size: 0.92rem;
+      max-width: 660px;
+    }
+
+    .http-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(0,229,160,0.1);
+      border: 1px solid rgba(0,229,160,0.3);
+      border-radius: 999px;
+      padding: 0.3rem 1rem;
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      color: #00e5a0;
+      margin-top: 1.2rem;
+      text-transform: uppercase;
+    }
+
+    .http-badge::before {
+      content: '';
+      width: 7px; height: 7px;
+      background: #00e5a0;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #00e5a0;
+      animation: blink 1.4s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+      0%,100% { opacity:1; } 50% { opacity:0.2; }
+    }
+
+    /* ──────────────── INTERACTIVE SECTION ──────────────── */
+    #interactive {
+      text-align: center;
+    }
+
+    #fire-btn {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.7rem;
+      font-family: 'Syne', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #000;
+      background: var(--accent);
+      border: none;
+      border-radius: 10px;
+      padding: 1rem 2.4rem;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: transform 0.2s, box-shadow 0.2s;
+      overflow: hidden;
+    }
+
+    #fire-btn:hover {
+      transform: scale(1.04);
+      box-shadow: 0 0 40px rgba(0,212,255,0.5);
+    }
+
+    #fire-btn:active { transform: scale(0.97); }
+
+    #status-msg {
+      margin-top: 2rem;
+      font-family: 'Syne', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #00e5a0;
+      min-height: 2rem;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.5s, transform 0.5s;
+    }
+
+    #status-msg.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ──────────────── CANVAS CONFETTI ──────────────── */
+    #confetti-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 200;
+    }
+
+    /* ──────────────── FOOTER ──────────────── */
+    footer {
+      position: relative;
+      z-index: 1;
+      background: var(--bg2);
+      border-top: 1px solid rgba(0,212,255,0.1);
+      text-align: center;
+      padding: 2.5rem 2rem;
+    }
+
+    .footer-uni {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      color: #fff;
+      margin-bottom: 0.4rem;
+    }
+
+    .footer-meta {
+      font-size: 0.75rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .footer-accent {
+      color: var(--accent);
+    }
+
+    /* ──────────────── SCROLL FADE IN ──────────────── */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+  </style>
+</head>
+<body>
+
+<!-- CONFETTI CANVAS -->
+<canvas id="confetti-canvas"></canvas>
+
+<!-- NAV -->
+<nav>
+  <span class="nav-logo">Grupo HTTP &mdash; SO</span>
+  <div id="clock">
+    <div class="date-line" id="clock-date">—</div>
+    <div id="clock-time">--:--:--</div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div id="hero">
+  <p class="hero-eyebrow">Sistemas Operativos &bull; Proyecto Final</p>
+  <h1 class="hero-title">Nuestro Equipo<br/>Desarrollador</h1>
+
+  <div class="img-wrapper fade-in">
+    <img src="grupo.jpg" alt="Foto del grupo" id="group-img" onerror="handleImgError(this)" />
+    <div class="img-overlay">
+      <span class="img-overlay-text">Grupo Apache&nbsp;2</span>
+    </div>
+  </div>
+
+  <p class="hero-subtitle">Universidad &bull; Sistemas Operativos &bull; 2025</p>
+</div>
+
+<div class="divider"></div>
+
+<!-- MEMBERS -->
+<section id="members">
+  <p class="section-label fade-in">El equipo</p>
+  <h2 class="section-title fade-in">Integrantes del Grupo</h2>
+  <div class="cards-grid">
+
+    <div class="card fade-in" style="--card-color: var(--card1);">
+      <div class="card-icon">👑</div>
+      <div class="card-name">Integrante 1</div>
+      <div class="card-role">Líder de Proyecto</div>
+      <div class="card-num">01</div>
+    </div>
+
+    <div class="card fade-in" style="--card-color: var(--card2);">
+      <div class="card-icon">💻</div>
+      <div class="card-name">Integrante 2</div>
+      <div class="card-role">Desarrollador</div>
+      <div class="card-num">02</div>
+    </div>
+
+    <div class="card fade-in" style="--card-color: var(--card3);">
+      <div class="card-icon">🎨</div>
+      <div class="card-name">Integrante 3</div>
+      <div class="card-role">Diseñador</div>
+      <div class="card-num">03</div>
+    </div>
+
+    <div class="card fade-in" style="--card-color: var(--card4);">
+      <div class="card-icon">🔬</div>
+      <div class="card-name">Integrante 4</div>
+      <div class="card-role">QA / Testing</div>
+      <div class="card-num">04</div>
+    </div>
+
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- HTTP -->
+<section id="http">
+  <p class="section-label fade-in">Tecnología</p>
+  <h2 class="section-title fade-in">Nuestro Servidor HTTP</h2>
+
+  <div class="http-box fade-in">
+    <div class="http-icon-col">🌐</div>
+    <div class="http-text">
+      <h3>¿Qué es HTTP?</h3>
+      <p>
+        <strong style="color:#fff">HTTP</strong> (HyperText Transfer Protocol) es el protocolo de
+        comunicación que permite la transferencia de información entre un cliente (navegador) y un
+        servidor web; es la base de cualquier intercambio de datos en la World Wide Web.
+        El servidor recibe una <em>petición</em>, la procesa y envía una <em>respuesta</em> que
+        incluye el recurso solicitado junto con un código de estado (200, 404, 500…).
+      </p>
+      <p style="margin-top:0.8rem">
+        Esta página está siendo servida por <strong style="color:var(--accent)">Apache2</strong>
+        sobre <strong style="color:var(--accent)">Linux</strong> — uno de los servidores HTTP de
+        código abierto más utilizados del mundo, conocido por su robustez, flexibilidad y amplio
+        soporte de módulos.
+      </p>
+      <span class="http-badge">Apache2 · Linux · En línea</span>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- INTERACTIVE -->
+<section id="interactive">
+  <p class="section-label fade-in">Demo en vivo</p>
+  <h2 class="section-title fade-in">¿Servidor funcionando?</h2>
+
+  <button id="fire-btn" class="fade-in" onclick="launchCelebration()">
+    🚀 ¡Comprobar servidor!
+  </button>
+
+  <div id="status-msg">✅ ¡Servidor HTTP funcionando correctamente!</div>
+</section>
+
+<div class="divider"></div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-uni">Universidad Nacional de Colombia</div>
+  <div class="footer-meta">
+    Materia: <span class="footer-accent">Sistemas Operativos</span>
+    &nbsp;&bull;&nbsp;
+    Proyecto: <span class="footer-accent">Servidor HTTP Apache2</span>
+    &nbsp;&bull;&nbsp;
+    <span class="footer-accent">2025</span>
+  </div>
+</footer>
+
+<script>
+/* ═══════════════════════════════════════════
+   CLOCK
+═══════════════════════════════════════════ */
+function updateClock() {
+  const now = new Date();
+  const timeEl = document.getElementById('clock-time');
+  const dateEl = document.getElementById('clock-date');
+
+  const pad = n => String(n).padStart(2, '0');
+  timeEl.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+
+  const days = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  dateEl.textContent = `${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+/* ═══════════════════════════════════════════
+   IMAGE FALLBACK
+═══════════════════════════════════════════ */
+function handleImgError(img) {
+  img.style.display = 'none';
+  const wrapper = img.closest('.img-wrapper');
+  const placeholder = document.createElement('div');
+  placeholder.style.cssText = `
+    width: min(680px, 90vw);
+    height: 340px;
+    background: linear-gradient(135deg, #0b1526, #0f2040);
+    border-radius: 14px;
+    border: 2px dashed rgba(0,212,255,0.3);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    color: rgba(0,212,255,0.5);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+    text-align: center;
+    padding: 2rem;
+  `;
+  placeholder.innerHTML = `
+    <span style="font-size:4rem">📷</span>
+    <span>grupo.jpg</span>
+    <span style="opacity:0.5;font-size:0.7rem">Coloca la imagen en el mismo directorio que este archivo</span>
+  `;
+  wrapper.insertBefore(placeholder, img);
+  // Still show overlay on hover of placeholder
+  placeholder.addEventListener('mouseenter', () => {
+    wrapper.querySelector('.img-overlay').style.opacity = 1;
+  });
+  placeholder.addEventListener('mouseleave', () => {
+    wrapper.querySelector('.img-overlay').style.opacity = 0;
+  });
+}
+
+/* ═══════════════════════════════════════════
+   CONFETTI ENGINE
+═══════════════════════════════════════════ */
+const canvas = document.getElementById('confetti-canvas');
+const ctx    = canvas.getContext('2d');
+let particles = [];
+let animFrame = null;
+
+function resizeCanvas() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+const COLORS = ['#00d4ff','#7b5ea7','#ff5e7a','#00e5a0','#ffe566','#fff'];
+
+function createBurst() {
+  for (let i = 0; i < 180; i++) {
+    const x = Math.random() * canvas.width;
+    const y = Math.random() * canvas.height * 0.6;
+    particles.push({
+      x, y,
+      vx: (Math.random() - 0.5) * 9,
+      vy: Math.random() * -7 - 3,
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      w: Math.random() * 10 + 4,
+      h: Math.random() * 5 + 3,
+      rot: Math.random() * Math.PI * 2,
+      rotV: (Math.random() - 0.5) * 0.3,
+      life: 1,
+      decay: Math.random() * 0.012 + 0.008,
+      shape: Math.random() > 0.5 ? 'rect' : 'circle',
+    });
+  }
+}
+
+function drawParticle(p) {
+  ctx.save();
+  ctx.globalAlpha = p.life;
+  ctx.translate(p.x, p.y);
+  ctx.rotate(p.rot);
+  ctx.fillStyle = p.color;
+  if (p.shape === 'rect') {
+    ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+  } else {
+    ctx.beginPath();
+    ctx.arc(0, 0, p.w/2, 0, Math.PI*2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function animateConfetti() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x   += p.vx;
+    p.y   += p.vy;
+    p.vy  += 0.18;       // gravity
+    p.vx  *= 0.99;
+    p.rot += p.rotV;
+    p.life -= p.decay;
+    if (p.life <= 0) { particles.splice(i, 1); continue; }
+    drawParticle(p);
+  }
+  if (particles.length > 0) {
+    animFrame = requestAnimationFrame(animateConfetti);
+  } else {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+}
+
+function launchCelebration() {
+  // Reset
+  cancelAnimationFrame(animFrame);
+  particles = [];
+
+  // Multiple bursts
+  createBurst();
+  setTimeout(createBurst, 300);
+  setTimeout(createBurst, 600);
+
+  animateConfetti();
+
+  // Show message
+  const msg = document.getElementById('status-msg');
+  msg.classList.remove('show');
+  void msg.offsetWidth; // reflow
+  msg.classList.add('show');
+}
+
+/* ═══════════════════════════════════════════
+   SCROLL FADE-IN (IntersectionObserver)
+═══════════════════════════════════════════ */
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+      observer.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.12 });
+
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
